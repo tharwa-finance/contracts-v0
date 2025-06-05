@@ -84,13 +84,6 @@ contract MyOFTTest is TestHelperOz5 {
         assertEq(thUSDtkn.balanceOf(userA), initialBalance + 1 ether);
     }
 
-    function test_owner_can_burn() public {
-        vm.prank(address(this));
-        thUSDtkn.burn(userA, 3 ether);
-
-        assertEq(thUSDtkn.balanceOf(userA), initialBalance - 3 ether);
-    }
-
     function test_transfer_ownership() public {
         vm.prank(address(this));
         thUSDtkn.transferOwnership(userA);

@@ -94,14 +94,6 @@ contract thUSD is OFT {
         _mint(_to, _amount);
     }
 
-    /// @notice Burns tokens
-    /// @dev Only callable by the contract owner
-    /// @param _from The address to burn tokens from
-    /// @param _amount The amount of tokens to burn
-    function burn(address _from, uint256 _amount) public onlyOwner {
-        _burn(_from, _amount);
-    }
-
     /// @notice Adds an address to the blacklist
     /// @dev Only callable by the contract owner
     /// @param _account The address to blacklist
