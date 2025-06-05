@@ -91,15 +91,6 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
     );
 
     /**
-     * @notice Emitted when stablecoins are moved to treasury
-     */
-    event StablecoinsMovedToTreasury(
-        uint256 daiAmount,
-        uint256 usdcAmount,
-        uint256 usdtAmount
-    );
-
-    /**
      * @notice Emitted when thUSD is moved to treasury
      */
     event ThUSDMovedToTreasury(uint256 amount);
@@ -169,8 +160,6 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
 
         IERC20(usdt).safeTransferFrom(msg.sender, address(this), usdtAmount);
         IERC20(thUSD).safeTransfer(msg.sender, thAmount);
-
-        // send the stablecoin to the treasury
         IERC20(usdt).safeTransfer(treasury, usdtAmount);
 
         emit SwapUSDTForThUSD(msg.sender, usdtAmount, thAmount);
@@ -193,8 +182,6 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
 
         IERC20(dai).safeTransferFrom(msg.sender, address(this), daiAmount);
         IERC20(thUSD).safeTransfer(msg.sender, thAmount);
-
-        // send the stablecoin to the treasury
         IERC20(dai).safeTransfer(treasury, daiAmount);
 
         emit SwapDAIForThUSD(msg.sender, daiAmount, thAmount);
@@ -211,7 +198,7 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
     /** admin ops */
 
     /**
-     * withdraw thUSD used for excess liquidity
+     * withdraw thUSD used for excess liquidity for accounting purposes
      */
     function MoveThUSDToTreasury(uint256 amount) external onlyOwner {
         IERC20(thUSD).safeTransfer(treasury, amount);

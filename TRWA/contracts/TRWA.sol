@@ -106,17 +106,44 @@ contract TRWA is Ownable, OFT {
         address delegate_,
         address treasury_
     ) OFT(name_, symbol_, lzEndpoint_, delegate_) Ownable(delegate_) {
-        // mint 80% to the inital lp
+        // self-mint 80% to the inital lp
         _mint(address(this), (MAX_SUPPLY * 80) / 100);
         // rest to treasury
         _mint(treasury_, (MAX_SUPPLY * 20) / 100);
 
         treasury = treasury_;
         isFeeExempt[treasury_] = true;
-        isFeeExempt[delegate_] = true;
     }
 
-    /* ─────────────── owner ops ─────────────── */
+    /* ─────────────── core fee / guard logic ─────────────── */
+
+    /**
+     * @notice Internal transfer function with tax logic
+     * @dev Overrides OpenZeppelin's _update to implement taxes on buys/sells
+     * @dev Applies taxes only on non-exempt addresses during trades with the pair
+     * @param from Sender address
+     * @param to Recipient address
+     * @param amount Transfer amount
+     */
+    function _update(address from, address to, uint256 amount) internal override {
+        // Apply launch‑phase checks only for normal transfers (not mint/burn) and non‑exempt wallets.
+        if (from != address(0) && to != address(0) && !isFeeExempt[from] && !isFeeExempt[to]) {
+            bool isBuy = from == pair;
+            bool isSell = to == pair;
+
+            // Calculate and collect fee
+            uint256 fee = ((isBuy ? buyTaxBps : isSell ? sellTaxBps : 0) * amount) / TAX_DENOMINATOR;
+            if (fee > 0) {
+                super._update(from, treasury, fee);
+                amount -= fee;
+            }
+        }
+
+        // Final transfer
+        super._update(from, to, amount);
+    }
+
+    /** admin ops **/
 
     /**
      * @notice Opens trading and creates Uniswap V2 liquidity pool
@@ -193,33 +220,5 @@ contract TRWA is Ownable, OFT {
         }
 
         pair = _pair;
-    }
-
-    /* ─────────────── core fee / guard logic ─────────────── */
-
-    /**
-     * @notice Internal transfer function with tax logic
-     * @dev Overrides OpenZeppelin's _update to implement taxes on buys/sells
-     * @dev Applies taxes only on non-exempt addresses during trades with the pair
-     * @param from Sender address
-     * @param to Recipient address
-     * @param amount Transfer amount
-     */
-    function _update(address from, address to, uint256 amount) internal override {
-        // Apply launch‑phase checks only for normal transfers (not mint/burn) and non‑exempt wallets.
-        if (from != address(0) && to != address(0) && !isFeeExempt[from] && !isFeeExempt[to]) {
-            bool isBuy = from == pair;
-            bool isSell = to == pair;
-
-            // Calculate and collect fee
-            uint256 fee = ((isBuy ? buyTaxBps : isSell ? sellTaxBps : 0) * amount) / TAX_DENOMINATOR;
-            if (fee > 0) {
-                super._update(from, treasury, fee);
-                amount -= fee;
-            }
-        }
-
-        // Final transfer
-        super._update(from, to, amount);
     }
 }
