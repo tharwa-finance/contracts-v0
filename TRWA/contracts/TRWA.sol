@@ -13,7 +13,6 @@ visit : https://tharwa.finance
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
-import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @dev Interface for UniswapV2Factory to create trading pairs
@@ -46,7 +45,7 @@ interface IUniswapV2Router02 {
  * @notice LayerZero OFT (Omnichain Fungible Token) with launch-phase trading guards and configurable buy/sell taxes
  * @dev Extends LayerZero's OFT for cross-chain functionality and OpenZeppelin's Ownable for access control
  */
-contract TRWA is Ownable, OFT, Pausable {
+contract TRWA is Ownable, OFT {
     /* ─────────────── launch settings ─────────────── */
 
     /// Maximum token supply (10 billion tokens)
@@ -84,8 +83,6 @@ contract TRWA is Ownable, OFT, Pausable {
     /// @param maxTaxBps Maximum allowed tax in basis points
     /// @param actualTaxBps Attempted tax value in basis points
     error MaxTaxBpsExceeded(uint256 maxTaxBps, uint256 actualTaxBps);
-    /// @notice Thrown when attempting to trade before trading is opened
-    error TradingNotOpen();
     /// @notice Thrown when providing zero address where not allowed
     error ZeroAddress();
     /// @notice Thrown when attempting to open trading when already open
@@ -160,20 +157,6 @@ contract TRWA is Ownable, OFT, Pausable {
     }
 
     /**
-     * @notice Pauses the contract
-     */
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    /**
-     * @notice Unpauses the contract
-     */
-    function unpause() external onlyOwner {
-        _unpause();
-    }
-
-    /**
      * @notice Updates buy and sell tax rates
      * @dev Both values must not exceed MAX_TAX_BPS
      * @param buyBps New buy tax in basis points
@@ -222,7 +205,7 @@ contract TRWA is Ownable, OFT, Pausable {
      * @param to Recipient address
      * @param amount Transfer amount
      */
-    function _update(address from, address to, uint256 amount) internal override whenNotPaused {
+    function _update(address from, address to, uint256 amount) internal override {
         // Apply launch‑phase checks only for normal transfers (not mint/burn) and non‑exempt wallets.
         if (from != address(0) && to != address(0) && !isFeeExempt[from] && !isFeeExempt[to]) {
             bool isBuy = from == pair;

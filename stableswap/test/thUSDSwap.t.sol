@@ -130,7 +130,7 @@ contract thUSDSwapTest is Test {
 
         // withdraw thUSD
         vm.prank(address(this));
-        swap.MoveThUSDToTreasury();
+        swap.MoveThUSDToTreasury(3000000 * 10 ** 18);
 
         assertEq(
             thUSD.balanceOf(treasury),
@@ -138,7 +138,7 @@ contract thUSDSwapTest is Test {
         );
     }
 
-    function testWithdrawStablecoins() public {
+    function testStablecoinsAreinTreasury() public {
         // mint thUSD to the swap contract
         thUSD.mint(address(swap), 3000000 * 10 ** 18);
 
@@ -160,13 +160,20 @@ contract thUSDSwapTest is Test {
         swap.swapUSDT(1000000 * 10 ** 6);
         vm.stopPrank();
 
-        // withdraw stablecoins
-        vm.prank(address(this));
-        swap.MoveStablecoinsToTreasury();
-
         assertEq(dai.balanceOf(treasury), 1000000 * 10 ** 18);
         assertEq(usdt.balanceOf(treasury), 1000000 * 10 ** 6);
         assertEq(usdc.balanceOf(treasury), 1000000 * 10 ** 6);
+    }
+
+    function testRescueERC20() public {
+        MockERC20 aToken = new MockERC20("aToken", "aToken", 18);
+
+        aToken.mint(address(swap), 1000000 * 10 ** 18);
+
+        vm.prank(address(this));
+        swap.rescueERC20(address(aToken), 1000000 * 10 ** 18);
+
+        assertEq(aToken.balanceOf(address(this)), 1000000 * 10 ** 18);
     }
 
     receive() external payable {}

@@ -77,13 +77,6 @@ contract MyOFTTest is TestHelperOz5 {
         assertEq(thUSDtkn.balanceOf(userB), initialBalance + tokensToSend);
     }
 
-    function test_owner_can_pause() public {
-        vm.prank(address(this));
-        thUSDtkn.pause();
-
-        assertEq(thUSDtkn.paused(), true);
-    }
-
     function test_owner_can_mint() public {
         vm.prank(address(this));
         thUSDtkn.issue(userA, 1 ether);
@@ -91,37 +84,11 @@ contract MyOFTTest is TestHelperOz5 {
         assertEq(thUSDtkn.balanceOf(userA), initialBalance + 1 ether);
     }
 
-    function test_owner_can_unpause() public {
+    function test_owner_can_burn() public {
         vm.prank(address(this));
-        thUSDtkn.pause();
+        thUSDtkn.burn(userA, 3 ether);
 
-        assertEq(thUSDtkn.paused(), true);
-
-        vm.prank(address(this));
-        thUSDtkn.unpause();
-
-        assertEq(thUSDtkn.paused(), false);
-    }
-
-    function test_non_owner_cannot_pause() public {
-        vm.prank(userA);
-        vm.expectRevert();
-        thUSDtkn.pause();
-    }
-
-    function test_non_owner_cannot_unpause() public {
-        vm.prank(userA);
-        vm.expectRevert();
-        thUSDtkn.unpause();
-    }
-
-    function test_can_not_transfer_when_paused() public {
-        vm.prank(address(this));
-        thUSDtkn.pause();
-
-        vm.prank(userA);
-        vm.expectRevert();
-        thUSDtkn.transfer(userB, 1 ether);
+        assertEq(thUSDtkn.balanceOf(userA), initialBalance - 3 ether);
     }
 
     function test_transfer_ownership() public {
