@@ -132,13 +132,10 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
         }
 
         // Pull USDC from the caller safely
-        IERC20(usdc).safeTransferFrom(msg.sender, address(this), usdcAmount);
+        IERC20(usdc).safeTransferFrom(msg.sender, treasury, usdcAmount);
 
         // Transfer thUSD to the caller
         IERC20(thUSD).safeTransfer(msg.sender, thAmount);
-
-        // send the stablecoin to the treasury
-        IERC20(usdc).safeTransfer(treasury, usdcAmount);
 
         emit SwapUSDCForThUSD(msg.sender, usdcAmount, thAmount);
     }
@@ -158,9 +155,8 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
             revert InsufficientLiquidity();
         }
 
-        IERC20(usdt).safeTransferFrom(msg.sender, address(this), usdtAmount);
+        IERC20(usdt).safeTransferFrom(msg.sender, treasury, usdtAmount);
         IERC20(thUSD).safeTransfer(msg.sender, thAmount);
-        IERC20(usdt).safeTransfer(treasury, usdtAmount);
 
         emit SwapUSDTForThUSD(msg.sender, usdtAmount, thAmount);
     }
@@ -180,9 +176,8 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
             revert InsufficientLiquidity();
         }
 
-        IERC20(dai).safeTransferFrom(msg.sender, address(this), daiAmount);
+        IERC20(dai).safeTransferFrom(msg.sender, treasury, daiAmount);
         IERC20(thUSD).safeTransfer(msg.sender, thAmount);
-        IERC20(dai).safeTransfer(treasury, daiAmount);
 
         emit SwapDAIForThUSD(msg.sender, daiAmount, thAmount);
     }
