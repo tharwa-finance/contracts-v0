@@ -13,7 +13,6 @@ visit : https://tharwa.finance
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
-import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @dev Interface for UniswapV2Factory to create trading pairs
@@ -46,7 +45,7 @@ interface IUniswapV2Router02 {
  * @notice LayerZero OFT (Omnichain Fungible Token) with launch-phase trading guards and configurable buy/sell taxes
  * @dev Extends LayerZero's OFT for cross-chain functionality and OpenZeppelin's Ownable for access control
  */
-contract TRWA is Ownable, OFT, Pausable {
+contract TRWA is Ownable, OFT {
     /* ─────────────── launch settings ─────────────── */
 
     /// Maximum token supply (10 billion tokens)
@@ -84,8 +83,6 @@ contract TRWA is Ownable, OFT, Pausable {
     /// @param maxTaxBps Maximum allowed tax in basis points
     /// @param actualTaxBps Attempted tax value in basis points
     error MaxTaxBpsExceeded(uint256 maxTaxBps, uint256 actualTaxBps);
-    /// @notice Thrown when attempting to trade before trading is opened
-    error TradingNotOpen();
     /// @notice Thrown when providing zero address where not allowed
     error ZeroAddress();
     /// @notice Thrown when attempting to open trading when already open
@@ -109,17 +106,44 @@ contract TRWA is Ownable, OFT, Pausable {
         address delegate_,
         address treasury_
     ) OFT(name_, symbol_, lzEndpoint_, delegate_) Ownable(delegate_) {
-        // mint 80% to the inital lp
+        // self-mint 80% to the inital lp
         _mint(address(this), (MAX_SUPPLY * 80) / 100);
         // rest to treasury
         _mint(treasury_, (MAX_SUPPLY * 20) / 100);
 
         treasury = treasury_;
         isFeeExempt[treasury_] = true;
-        isFeeExempt[delegate_] = true;
     }
 
-    /* ─────────────── owner ops ─────────────── */
+    /* ─────────────── core fee / guard logic ─────────────── */
+
+    /**
+     * @notice Internal transfer function with tax logic
+     * @dev Overrides OpenZeppelin's _update to implement taxes on buys/sells
+     * @dev Applies taxes only on non-exempt addresses during trades with the pair
+     * @param from Sender address
+     * @param to Recipient address
+     * @param amount Transfer amount
+     */
+    function _update(address from, address to, uint256 amount) internal override {
+        // Apply launch‑phase checks only for normal transfers (not mint/burn) and non‑exempt wallets.
+        if (from != address(0) && to != address(0) && !isFeeExempt[from] && !isFeeExempt[to]) {
+            bool isBuy = from == pair;
+            bool isSell = to == pair;
+
+            // Calculate and collect fee
+            uint256 fee = ((isBuy ? buyTaxBps : isSell ? sellTaxBps : 0) * amount) / TAX_DENOMINATOR;
+            if (fee > 0) {
+                super._update(from, treasury, fee);
+                amount -= fee;
+            }
+        }
+
+        // Final transfer
+        super._update(from, to, amount);
+    }
+
+    /** admin ops **/
 
     /**
      * @notice Opens trading and creates Uniswap V2 liquidity pool
@@ -160,20 +184,6 @@ contract TRWA is Ownable, OFT, Pausable {
     }
 
     /**
-     * @notice Pauses the contract
-     */
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    /**
-     * @notice Unpauses the contract
-     */
-    function unpause() external onlyOwner {
-        _unpause();
-    }
-
-    /**
      * @notice Updates buy and sell tax rates
      * @dev Both values must not exceed MAX_TAX_BPS
      * @param buyBps New buy tax in basis points
@@ -210,33 +220,5 @@ contract TRWA is Ownable, OFT, Pausable {
         }
 
         pair = _pair;
-    }
-
-    /* ─────────────── core fee / guard logic ─────────────── */
-
-    /**
-     * @notice Internal transfer function with tax logic
-     * @dev Overrides OpenZeppelin's _update to implement taxes on buys/sells
-     * @dev Applies taxes only on non-exempt addresses during trades with the pair
-     * @param from Sender address
-     * @param to Recipient address
-     * @param amount Transfer amount
-     */
-    function _update(address from, address to, uint256 amount) internal override whenNotPaused {
-        // Apply launch‑phase checks only for normal transfers (not mint/burn) and non‑exempt wallets.
-        if (from != address(0) && to != address(0) && !isFeeExempt[from] && !isFeeExempt[to]) {
-            bool isBuy = from == pair;
-            bool isSell = to == pair;
-
-            // Calculate and collect fee
-            uint256 fee = ((isBuy ? buyTaxBps : isSell ? sellTaxBps : 0) * amount) / TAX_DENOMINATOR;
-            if (fee > 0) {
-                super._update(from, treasury, fee);
-                amount -= fee;
-            }
-        }
-
-        // Final transfer
-        super._update(from, to, amount);
     }
 }

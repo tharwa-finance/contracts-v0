@@ -234,20 +234,4 @@ contract MyOFTTest is TestHelperOz5 {
 
         assertEq(trwa.owner(), userA);
     }
-
-    function test_pause() public {
-        vm.prank(address(this));
-        trwa.pause();
-
-        assertEq(trwa.paused(), true);
-    }
-
-    function test_can_not_transfer_when_paused() public {
-        vm.prank(address(this));
-        trwa.pause();
-
-        vm.prank(tokenTreasury);
-        vm.expectRevert();
-        trwa.transfer(userA, 1 ether);
-    }
 }
