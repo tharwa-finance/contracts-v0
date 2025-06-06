@@ -201,22 +201,9 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Allows the owner to rescue ETH sent to the contract by mistake
-     * @dev Only callable by the contract owner
-     */
-    function rescueETH() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
-    }
-
-    /**
      * rescue ERC20 tokens sent to the contract by mistake
      */
     function rescueERC20(address token, uint256 amount) external onlyOwner {
         IERC20(token).safeTransfer(msg.sender, amount);
     }
-
-    /**
-     * @dev Fallback function to receive ETH
-     */
-    receive() external payable {}
 }
