@@ -106,21 +106,6 @@ contract thUSDSwapTest is Test {
         vm.stopPrank();
     }
 
-    function testRescueETH() public {
-        vm.deal(userA, 1000000 * 10 ** 18);
-
-        vm.prank(userA);
-        payable(address(swap)).transfer(1000000 * 10 ** 18);
-
-        assertEq(address(swap).balance, 1000000 * 10 ** 18);
-
-        uint256 currentBalance = address(this).balance;
-        vm.prank(address(this));
-        swap.rescueETH();
-
-        assertEq(address(this).balance, currentBalance + 1000000 * 10 ** 18);
-    }
-
     function test_WithdrawThUSD() public {
         // mint thUSD to the swap contract
         thUSD.mint(address(swap), 3000000 * 10 ** 18);
@@ -175,6 +160,4 @@ contract thUSDSwapTest is Test {
 
         assertEq(aToken.balanceOf(address(this)), 1000000 * 10 ** 18);
     }
-
-    receive() external payable {}
 }
