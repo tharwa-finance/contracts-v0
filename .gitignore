@@ -19,6 +19,7 @@ dist
 build
 cache
 
+/stableswap/lib
 
 pnpm-error.log
 .idea
