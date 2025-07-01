@@ -32,5 +32,6 @@ All contracts are available on both Sepolia and Mainnet.
 stage 0 audits are available on :
 [PrismSec Audit Report (PDF)](./audits/prismsec_tharwa_review.pdf)
 
+### More Info
 
 for more info visit : https://tharwa.finance
