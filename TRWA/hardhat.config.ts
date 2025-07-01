@@ -29,11 +29,11 @@ const config: HardhatUserConfig = {
     paths: {
         cache: 'cache/hardhat',
     },
-    
+
     solidity: {
         compilers: [
             {
-                version: '0.8.22',
+                version: '0.8.24',
                 settings: {
                     optimizer: {
                         enabled: true,
@@ -46,20 +46,22 @@ const config: HardhatUserConfig = {
     networks: {
         'sepolia-testnet': {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
-            url: 'https://1rpc.io/sepolia',
+            url: 'https://sepolia.drpc.org',
             accounts,
         },
         'eth-mainnet': {
             eid: EndpointId.ETHEREUM_V2_MAINNET,
-            url: 'https://1rpc.io/eth',
+            url: 'https://eth.merkle.io',
+            gas: 6000000,
+            gasPrice: "auto",
             accounts,
         },
         'holesky-testnet': {
             eid: EndpointId.HOLESKY_V2_TESTNET,
-            url: 'https://1rpc.io/holesky',
+            url: 'https://holesky.drpc.org',
             accounts,
         },
-        
+
         hardhat: {
 
             // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit

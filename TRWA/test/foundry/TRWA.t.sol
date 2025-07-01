@@ -100,6 +100,10 @@ contract MyOFTTest is TestHelperOz5 {
         vm.deal(trwa.owner(), 1 ether);
         trwa.openTrading{ value: 1 ether }();
 
+        //owner sets taxes
+        vm.prank(trwa.owner());
+        trwa.setTaxes(500, 500);
+
         // Get the created pair address
         address pairAddress = trwa.pair();
 
@@ -118,7 +122,7 @@ contract MyOFTTest is TestHelperOz5 {
 
         // Check treasury received the tax
         // Initial treasury balance was 20% of MAX_SUPPLY
-        uint256 initialTreasuryBalance = (trwa.MAX_SUPPLY() * 20) / 100;
+        uint256 initialTreasuryBalance = (trwa.MAX_SUPPLY() * 30) / 100;
         assertEq(trwa.balanceOf(trwa.treasury()), initialTreasuryBalance - tokensToSend + expectedTax);
     }
 
@@ -151,7 +155,7 @@ contract MyOFTTest is TestHelperOz5 {
 
         // Check treasury received the tax
         // Initial treasury balance was 20% of MAX_SUPPLY minus the tokens sent to userA
-        uint256 initialTreasuryBalance = (trwa.MAX_SUPPLY() * 20) / 100;
+        uint256 initialTreasuryBalance = (trwa.MAX_SUPPLY() * 30) / 100;
         assertEq(trwa.balanceOf(trwa.treasury()), initialTreasuryBalance - tokensToSend + expectedTax);
     }
 
