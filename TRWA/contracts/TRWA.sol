@@ -58,7 +58,7 @@ contract TRWA is Ownable, OFT {
     uint256 internal constant TAX_DENOMINATOR = 10_000;
 
     /// Treasury address that receives collected taxes
-    address public immutable treasury;
+    address public treasury;
 
     /// Trading enabled flag - gates trading functionality
     bool public tradingOpen;
@@ -69,14 +69,11 @@ contract TRWA is Ownable, OFT {
     /// Mapping of addresses exempt from taxes
     mapping(address => bool) public isFeeExempt;
 
-    /// Tracks the last block number when an address made a buy
-    mapping(address => uint256) public lastBuyBlock;
+    /// Buy tax in basis points (default 0%)
+    uint16 public buyTaxBps = 0;
 
-    /// Buy tax in basis points (default 3%)
-    uint16 public buyTaxBps = 300;
-
-    /// Sell tax in basis points (default 7%)
-    uint16 public sellTaxBps = 700;
+    /// Sell tax in basis points (default 0%)
+    uint16 public sellTaxBps = 0;
 
     // errors
     /// Thrown when attempting to set tax above maximum allowed
@@ -92,7 +89,7 @@ contract TRWA is Ownable, OFT {
 
     /**
      * @notice Initializes the TRWA token contract
-     * @dev Mints 80% of supply to contract for liquidity, 20% to treasury (reserved for airdrops, marketing, CEX listing, etc.)
+     * @dev Mints 70% of supply to contract for liquidity, 30% to treasury (reserved for airdrops, marketing, CEX listing, etc.)
      * @param name_ Token name
      * @param symbol_ Token symbol
      * @param lzEndpoint_ LayerZero endpoint address for cross-chain functionality
@@ -106,13 +103,12 @@ contract TRWA is Ownable, OFT {
         address delegate_,
         address treasury_
     ) OFT(name_, symbol_, lzEndpoint_, delegate_) Ownable(delegate_) {
-        // self-mint 80% to the inital lp
-        _mint(address(this), (MAX_SUPPLY * 80) / 100);
+        // self-mint 70% to the inital lp
+        _mint(address(this), (MAX_SUPPLY * 70) / 100);
         // rest to treasury
-        _mint(treasury_, (MAX_SUPPLY * 20) / 100);
+        _mint(treasury_, (MAX_SUPPLY * 30) / 100);
 
         treasury = treasury_;
-        isFeeExempt[treasury_] = true;
     }
 
     /* ─────────────── core fee / guard logic ─────────────── */

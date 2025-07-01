@@ -29,7 +29,7 @@ const config: HardhatUserConfig = {
     paths: {
         cache: 'cache/hardhat',
     },
-    
+
     solidity: {
         compilers: [
             {
@@ -49,9 +49,9 @@ const config: HardhatUserConfig = {
             url: 'https://1rpc.io/sepolia',
             accounts,
         },
-        'eth-mainnet': {
+        'mainnet': {
             eid: EndpointId.ETHEREUM_V2_MAINNET,
-            url: 'https://1rpc.io/eth',
+            url: 'https://eth.drpc.org',
             accounts,
         },
         'holesky-testnet': {
@@ -59,7 +59,7 @@ const config: HardhatUserConfig = {
             url: 'https://1rpc.io/holesky',
             accounts,
         },
-        
+
         hardhat: {
 
             // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit
