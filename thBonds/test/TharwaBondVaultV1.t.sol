@@ -5,8 +5,9 @@ import {Test, console} from "forge-std/Test.sol";
 import {TharwaBondVaultV1} from "../src/TharwaBondVaultV1.sol";
 import {MockERC20} from "./MockERC20.sol";
 import {IERC1155Receiver, IERC165} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
+contract TharwaBondVaultV1Test is Test, IERC1155Receiver, AccessControl {
     TharwaBondVaultV1 public vault;
     MockERC20 public thUSD;
 
@@ -37,7 +38,7 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
         // Calculate expected payout according to contract formula
         uint256 daysLeft = (maturity - block.timestamp) / 1 days + 1;
         uint256 pen = daysLeft * 0.002e18;
-        if (pen > 0.20e18) pen = 0.20e18;
+        if (pen > 0.2e18) pen = 0.2e18;
         uint256 expectedPayout = (1000e18 * (1e18 - pen)) / 1e18;
 
         uint256 balBefore = thUSD.balanceOf(address(this));
@@ -62,13 +63,14 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
     }
 
     function testSetBondPriceAndCap() public {
-        vault.setBondPrice(TharwaBondVaultV1.BondDuration.NinetyDays, 0.90e18);
-        vault.setBondCap(TharwaBondVaultV1.BondDuration.NinetyDays, 2e18);
+        vault.setBondPrice(TharwaBondVaultV1.BondDuration.NinetyDays, 0.9e18);
+        vault.setBondCap(TharwaBondVaultV1.BondDuration.NinetyDays, 20e18);
         (uint256 price, , uint256 cap, ) = vault.bondSeries(
             TharwaBondVaultV1.BondDuration.NinetyDays
         );
-        assertEq(price, 0.90e18);
-        assertEq(cap, 2e18);
+        assertEq(price, 0.9e18);
+        // cap should be 20e18
+        assertEq(cap, 20e18);
     }
 
     function testSetURI() public {
@@ -82,27 +84,37 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
         vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 0);
     }
 
+    function testPurchaseBondBelowMinRevert() public {
+        uint256 belowMin = 10e18 - 1;
+        vm.expectRevert(TharwaBondVaultV1.BelowMinimumFaceAmount.selector);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, belowMin);
+    }
+
+    function testPurchaseBondZeroAmountRevert_old() public {
+        vm.expectRevert(TharwaBondVaultV1.ZeroAmount.selector);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 0);
+    }
+
     function testPurchaseBondCapExceededRevert() public {
-        // Reduce cap to 1e18 face value and attempt to purchase 2e18
-        vault.setBondCap(TharwaBondVaultV1.BondDuration.NinetyDays, 1e18);
-        thUSD.approve(address(vault), 2e18);
+        vault.setBondCap(TharwaBondVaultV1.BondDuration.NinetyDays, 20e18);
+        thUSD.approve(address(vault), 30e18);
         vm.expectRevert(TharwaBondVaultV1.CapExceeded.selector);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 2e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 30e18);
     }
 
     function testEarlyExitBondMaturedRevert() public {
-        thUSD.approve(address(vault), 1e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 1e18);
+        thUSD.approve(address(vault), 10e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 10e18);
         uint256 maturity = ((block.timestamp + 90 days) / 1 days) * 1 days;
         // Warp past maturity so the bond is matured
         vm.warp(maturity + 1);
         vm.expectRevert(TharwaBondVaultV1.BondMatured.selector);
-        vault.earlyExit(maturity, 1e18);
+        vault.earlyExit(maturity, 10e18);
     }
 
     function testRedeemBondNotMaturedRevert() public {
-        thUSD.approve(address(vault), 1e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 1e18);
+        thUSD.approve(address(vault), 10e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 10e18);
         uint256 maturity = ((block.timestamp + 90 days) / 1 days) * 1 days;
         vm.expectRevert(TharwaBondVaultV1.BondNotMatured.selector);
         vault.redeemBond(maturity);
@@ -115,13 +127,13 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
 
     function testEarlyExitMaxPenaltyCapped() public {
         // 180-day bond should trigger max penalty cap when exiting immediately
-        thUSD.approve(address(vault), 1e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.OneEightyDays, 1e18);
+        thUSD.approve(address(vault), 10e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.OneEightyDays, 10e18);
         uint256 maturity = ((block.timestamp + 180 days) / 1 days) * 1 days;
 
-        uint256 expectedPayout = (1e18 * (1e18 - 0.20e18)) / 1e18; // 20% max penalty
+        uint256 expectedPayout = (10e18 * (1e18 - 0.2e18)) / 1e18; // 20% max penalty
         uint256 balBefore = thUSD.balanceOf(address(this));
-        vault.earlyExit(maturity, 1e18);
+        vault.earlyExit(maturity, 10e18);
         assertEq(thUSD.balanceOf(address(this)), balBefore + expectedPayout);
     }
 
@@ -160,22 +172,25 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
     }
 
     function testTotalOutstanding() public {
-        thUSD.approve(address(vault), 3e18);
+        thUSD.approve(address(vault), 30e18);
 
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 1e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.OneEightyDays, 1e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.ThreeSixtyDays, 1e18);
-        assertEq(vault.totalOutstanding(), 3e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 10e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.OneEightyDays, 10e18);
+        vault.purchaseBond(
+            TharwaBondVaultV1.BondDuration.ThreeSixtyDays,
+            10e18
+        );
+        assertEq(vault.totalOutstanding(), 30e18);
     }
 
     function testRescueTokens() public {
-        thUSD.approve(address(vault), 1e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 1e18);
+        thUSD.approve(address(vault), 10e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 10e18);
 
         (uint256 price, , , ) = vault.bondSeries(
             TharwaBondVaultV1.BondDuration.NinetyDays
         );
-        uint256 cost = (1e18 * price) / 1e18;
+        uint256 cost = (10e18 * price) / 1e18;
 
         assertEq(thUSD.balanceOf(address(vault)), cost);
 
@@ -185,9 +200,9 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
     }
 
     function testGetBondsForUser() public {
-        thUSD.approve(address(vault), 2e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 1e18);
-        vault.purchaseBond(TharwaBondVaultV1.BondDuration.OneEightyDays, 1e18);
+        thUSD.approve(address(vault), 30e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.NinetyDays, 10e18);
+        vault.purchaseBond(TharwaBondVaultV1.BondDuration.OneEightyDays, 10e18);
 
         uint256 maturity90 = ((block.timestamp + 90 days) / 1 days) * 1 days;
         uint256 maturity180 = ((block.timestamp + 180 days) / 1 days) * 1 days;
@@ -202,6 +217,11 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
             if (bonds[i] == maturity180) has180 = true;
         }
         assertTrue(has90 && has180);
+    }
+
+    function testCanGrantRole() public {
+        vault.grantRole(DEFAULT_ADMIN_ROLE, address(0x1337));
+        assertTrue(vault.hasRole(DEFAULT_ADMIN_ROLE, address(0x1337)));
     }
 
     /* support IERC1155Receiver */
@@ -227,7 +247,7 @@ contract TharwaBondVaultV1Test is Test, IERC1155Receiver {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public pure override returns (bool) {
+    ) public pure override(AccessControl, IERC165) returns (bool) {
         return
             interfaceId == type(IERC1155Receiver).interfaceId ||
             interfaceId == type(IERC165).interfaceId;

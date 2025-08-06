@@ -17,16 +17,23 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /* ─── TharwaBondVaultV1 ────────────────────────────────────────────────────── */
 /// @title TharwaBondVaultV1
 /// @notice ERC1155 vault that issues fixed-term discounted bonds redeemable in THUSD
 /// @dev Bond token IDs equal their maturity timestamp truncated to UTC midnight
-contract TharwaBondVaultV1 is ERC1155Supply, AccessControl, Pausable {
+contract TharwaBondVaultV1 is
+    ERC1155Supply,
+    AccessControl,
+    Pausable,
+    ReentrancyGuard
+{
     /// -----------------------------------------------------------------------
     /// Custom errors
     /// -----------------------------------------------------------------------
     error ZeroAmount();
+    error BelowMinimumFaceAmount();
     error CapExceeded();
     error BondMatured();
     error BondNotMatured();
@@ -65,11 +72,14 @@ contract TharwaBondVaultV1 is ERC1155Supply, AccessControl, Pausable {
     /// ----------------------------------------------------------------------
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
+
     string public constant name = "Tharwa THUSD Bond";
     string public constant symbol = "ThBond";
 
+    /// Minimum face amount to purchase (10 THUSD)
+    uint256 public constant MIN_FACE_AMOUNT = 10e18;
     uint256 public constant EARLY_EXIT_PENALTY_RATE_PER_DAY = 0.002e18; // 0.2 %
-    uint256 public constant MAX_EARLY_EXIT_PENALTY_RATE = 0.20e18; // 20 %
+    uint256 public constant MAX_EARLY_EXIT_PENALTY_RATE = 0.2e18; // 20 %
 
     /// Stablecoin used for payment and redemption
     IERC20 public immutable THUSD;
@@ -101,25 +111,25 @@ contract TharwaBondVaultV1 is ERC1155Supply, AccessControl, Pausable {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         THUSD = IERC20(thusd_);
 
-        // For 5% APY at 90 days
+        // For 4% APY at 90 days
         bondSeries[BondDuration.NinetyDays] = BondSeries({
-            price: 987821917800000000, // 0.9878e18
+            price: 990375751614897437, // 0.9903757516148974e18
             duration: 90 days,
             cap: initialCap,
             outstanding: 0
         });
 
-        // For 7% APY at 180 days
+        // For 6% APY at 180 days
         bondSeries[BondDuration.OneEightyDays] = BondSeries({
-            price: 966630034400000000, // 0.9666e18
+            price: 971673581959479060, // 0.9716735819594791e18
             duration: 180 days,
             cap: initialCap,
             outstanding: 0
         });
 
-        // For 12% APY at 360 days
+        // For 8% APY at 360 days
         bondSeries[BondDuration.ThreeSixtyDays] = BondSeries({
-            price: 894169800200000000, // 0.8941e18
+            price: 926902608116467852, // 0.9269026081164679e18
             duration: 360 days,
             cap: initialCap,
             outstanding: 0
@@ -133,26 +143,29 @@ contract TharwaBondVaultV1 is ERC1155Supply, AccessControl, Pausable {
     /// @notice Purchase fixed-term bond tokens
     /// @param duration Selected bond duration enum value
     /// @param faceAmount Face value amount (in THUSD) to buy
-    /// @dev Transfers discounted THUSD from buyer, mints ERC1155 token whose id is maturity timestamp, and re[cords series data. Emits {BondIssued}. Reverts with {ZeroAmount} or {CapExceeded}.
+    /// @dev Transfers discounted THUSD from buyer, mints ERC1155 token whose id is maturity timestamp, and records series data. Emits {BondIssued}. Reverts with {ZeroAmount} or {CapExceeded} or {MaturityCollision}.
     function purchaseBond(
         BondDuration duration,
         uint256 faceAmount
-    ) external whenNotPaused {
+    ) external whenNotPaused nonReentrant {
         if (faceAmount == 0) revert ZeroAmount();
+        if (faceAmount < MIN_FACE_AMOUNT) revert BelowMinimumFaceAmount();
         BondSeries storage series = bondSeries[duration];
         if (series.outstanding + faceAmount > series.cap) revert CapExceeded();
 
         uint256 cost = (faceAmount * series.price) / 1e18;
         uint256 maturity = _midnightUTC(block.timestamp + series.duration);
 
-        // Prevent maturity date collision can mint after 1 day
-        if (maturitySeries[maturity] != duration && totalSupply(maturity) > 0) {
-            revert MaturityCollision();
+        if (maturitySeries[maturity] != duration) {
+            if (totalSupply(maturity) > 0) {
+                revert MaturityCollision();
+            } else {
+                maturitySeries[maturity] = duration; // set maturity series if not already set
+            }
         }
 
         _mint(msg.sender, maturity, faceAmount, "");
         _userOwnedBonds[msg.sender].add(maturity);
-        maturitySeries[maturity] = duration;
         series.outstanding += faceAmount;
 
         THUSD.safeTransferFrom(msg.sender, address(this), cost);
@@ -186,8 +199,9 @@ contract TharwaBondVaultV1 is ERC1155Supply, AccessControl, Pausable {
 
         uint256 daysLeft = (tokenId - block.timestamp) / 1 days + 1;
         uint256 pen = daysLeft * EARLY_EXIT_PENALTY_RATE_PER_DAY;
-        if (pen > MAX_EARLY_EXIT_PENALTY_RATE)
+        if (pen > MAX_EARLY_EXIT_PENALTY_RATE) {
             pen = MAX_EARLY_EXIT_PENALTY_RATE;
+        }
 
         payout = (faceAmount * (1e18 - pen)) / 1e18;
         THUSD.safeTransfer(msg.sender, payout);
@@ -202,9 +216,7 @@ contract TharwaBondVaultV1 is ERC1155Supply, AccessControl, Pausable {
         uint256 bal = balanceOf(msg.sender, tokenId);
 
         _burn(msg.sender, tokenId, bal);
-        if (balanceOf(msg.sender, tokenId) == 0) {
-            _userOwnedBonds[msg.sender].remove(tokenId);
-        }
+        _userOwnedBonds[msg.sender].remove(tokenId);
         BondDuration duration = maturitySeries[tokenId];
         bondSeries[duration].outstanding -= bal;
 

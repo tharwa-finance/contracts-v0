@@ -55,11 +55,9 @@ contract TharwaBondVaultHandler is Test, IERC1155Receiver {
 
     // Try to subscribe arbitrary amount and tenor
     function purchase(uint256 amount, uint8 tenor) public {
-        amount = bound(amount, 1e16, 1e21); // 0.01 – 1,000 tokens
-        TharwaBondVaultV1.BondDuration dur = TharwaBondVaultV1.BondDuration(
-            tenor % 3
-        );
-        (uint256 price, , , ) = vault.bondSeries(dur);
+        amount = bound(amount, 10e18, 1e21); // 10 – 1,000 tokens (respect MIN_FACE_AMOUNT)
+        TharwaBondVaultV1.BondDuration dur = TharwaBondVaultV1.BondDuration(tenor % 3);
+        (uint256 price,,,) = vault.bondSeries(dur);
         uint256 cost = (amount * price) / 1e18;
         invariantTest.recordProfit(amount - cost);
 
@@ -89,29 +87,25 @@ contract TharwaBondVaultHandler is Test, IERC1155Receiver {
     }
 
     // IERC1155Receiver implementation
-    function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes calldata
-    ) external pure override returns (bytes4) {
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return this.onERC1155Received.selector;
     }
 
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] calldata,
-        uint256[] calldata,
-        bytes calldata
-    ) external pure override returns (bytes4) {
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return this.onERC1155BatchReceived.selector;
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) external pure override returns (bool) {
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
         return interfaceId == type(IERC1155Receiver).interfaceId;
     }
 }

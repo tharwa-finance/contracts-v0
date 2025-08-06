@@ -1,6 +1,0 @@
-[submodule "thBonds/lib/forge-std"]
-	path = thBonds/lib/forge-std
-	url = https://github.com/foundry-rs/forge-std
-[submodule "thBonds/lib/openzeppelin-contracts"]
-	path = thBonds/lib/openzeppelin-contracts
-	url = https://github.com/OpenZeppelin/openzeppelin-contracts
