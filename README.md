@@ -6,6 +6,7 @@ This repo contains the tharwa stage 0 contracts which are :
 - thUSD (tharwa USD)    
 - TRWA (tharwa Governance Token)
 - Stableswap (thUSD Stableswap Pool)
+- thBonds (tharwa Bonds) 
 
 ### Deployment Addresses
 
