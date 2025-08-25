@@ -10,6 +10,7 @@ contract thUSDSwapTest is Test {
     MockERC20 public dai;
     MockERC20 public usdc;
     MockERC20 public usdt;
+    MockERC20 public frxUSD;
     MockERC20 public thUSD;
 
     address public treasury;
@@ -22,6 +23,7 @@ contract thUSDSwapTest is Test {
         dai = new MockERC20("DAI", "DAI", 18);
         usdc = new MockERC20("USDC", "USDC", 6);
         usdt = new MockERC20("USDT", "USDT", 6);
+        frxUSD = new MockERC20("FRXUSD", "FRXUSD", 18);
         thUSD = new MockERC20("thUSD", "thUSD", 18);
 
         treasury = makeAddr("treasury");
@@ -30,6 +32,7 @@ contract thUSDSwapTest is Test {
             address(dai),
             address(usdc),
             address(usdt),
+            address(frxUSD),
             address(thUSD),
             treasury
         );
@@ -60,6 +63,24 @@ contract thUSDSwapTest is Test {
 
         assertEq(thUSD.balanceOf(address(userA)), 1000000 * 10 ** 18);
         assertEq(usdc.balanceOf(address(userA)), 0);
+
+        vm.stopPrank();
+    }
+
+    function testSwapFRXUSDForThUSD() public {
+        frxUSD.mint(address(userA), 1000000 * 10 ** 18);
+
+        thUSD.mint(address(swap), 1000000 * 10 ** 18);
+
+        vm.startPrank(userA);
+        uint256 senderBalance = frxUSD.balanceOf(address(userA));
+
+        frxUSD.approve(address(swap), senderBalance);
+
+        swap.swapFRXUSD(senderBalance);
+
+        assertEq(thUSD.balanceOf(address(userA)), 1000000 * 10 ** 18);
+        assertEq(frxUSD.balanceOf(address(userA)), 0);
 
         vm.stopPrank();
     }
@@ -107,8 +128,8 @@ contract thUSDSwapTest is Test {
     }
 
     function test_WithdrawThUSD() public {
-        // mint thUSD to the swap contract
-        thUSD.mint(address(swap), 3000000 * 10 ** 18);
+        // mint thUSD to the swap contract (cover 4 swaps x 1,000,000)
+        thUSD.mint(address(swap), 4000000 * 10 ** 18);
 
         // current balance of treasury
         uint256 treasuryBalance = thUSD.balanceOf(treasury);
@@ -124,13 +145,14 @@ contract thUSDSwapTest is Test {
     }
 
     function testStablecoinsAreinTreasury() public {
-        // mint thUSD to the swap contract
-        thUSD.mint(address(swap), 3000000 * 10 ** 18);
+        // mint thUSD to the swap contract (cover 4 swaps x 1,000,000)
+        thUSD.mint(address(swap), 4000000 * 10 ** 18);
 
         // mint all stablecoins to the userA
         dai.mint(address(userA), 1000000 * 10 ** 18);
         usdc.mint(address(userA), 1000000 * 10 ** 6);
         usdt.mint(address(userA), 1000000 * 10 ** 6);
+        frxUSD.mint(address(userA), 1000000 * 10 ** 18);
 
         // swap
         vm.startPrank(userA);
@@ -139,15 +161,18 @@ contract thUSDSwapTest is Test {
         dai.approve(address(swap), 1000000 * 10 ** 18);
         usdc.approve(address(swap), 1000000 * 10 ** 6);
         usdt.approve(address(swap), 1000000 * 10 ** 6);
+        frxUSD.approve(address(swap), 1000000 * 10 ** 18);
 
         swap.swapDAI(1000000 * 10 ** 18);
         swap.swapUSDC(1000000 * 10 ** 6);
         swap.swapUSDT(1000000 * 10 ** 6);
+        swap.swapFRXUSD(1000000 * 10 ** 18);
         vm.stopPrank();
 
         assertEq(dai.balanceOf(treasury), 1000000 * 10 ** 18);
         assertEq(usdt.balanceOf(treasury), 1000000 * 10 ** 6);
         assertEq(usdc.balanceOf(treasury), 1000000 * 10 ** 6);
+        assertEq(frxUSD.balanceOf(treasury), 1000000 * 10 ** 18);
     }
 
     function testRescueERC20() public {

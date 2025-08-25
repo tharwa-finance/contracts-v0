@@ -32,6 +32,9 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
     /// @notice Address of the USDT token contract (6 decimals)
     address public immutable usdt;
 
+    /// @notice Address of the FRXUSD token contract (18 decimals)
+    address public immutable frxUSD;
+
     /// @notice Address of the thUSD token contract (18 decimals)
     address public immutable thUSD;
 
@@ -91,6 +94,18 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
     );
 
     /**
+     * @notice Emitted when FRXUSD is swapped for thUSD
+     * @param user The address that initiated the swap
+     * @param frxUSDAmount The amount of FRXUSD swapped (18 decimals)
+     * @param thUSDAmount The amount of thUSD received (18 decimals)
+     */
+    event SwapFRXUSDForThUSD(
+        address indexed user,
+        uint256 frxUSDAmount,
+        uint256 thUSDAmount
+    );
+
+    /**
      * @notice Emitted when thUSD is moved to treasury
      */
     event ThUSDMovedToTreasury(uint256 amount);
@@ -107,12 +122,14 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
         address _dai,
         address _usdc,
         address _usdt,
+        address _frxUSD,
         address _thUSD,
         address _treasury
     ) Ownable(msg.sender) {
         dai = _dai;
         usdc = _usdc;
         usdt = _usdt;
+        frxUSD = _frxUSD;
         thUSD = _thUSD;
         treasury = _treasury;
     }
@@ -180,6 +197,27 @@ contract thUSDSwap is Ownable, ReentrancyGuard {
         IERC20(thUSD).safeTransfer(msg.sender, thAmount);
 
         emit SwapDAIForThUSD(msg.sender, daiAmount, thAmount);
+    }
+
+    /**
+     * @notice Swap FRXUSD (18 decimals) for thUSD (18 decimals) at a 1:1 value.
+     * @param frxUSDAmount Amount of FRXUSD to swap (units with 18‑decimals)
+     */
+    function swapFRXUSD(uint256 frxUSDAmount) external nonReentrant {
+        if (frxUSDAmount == 0) {
+            revert AmountZero();
+        }
+
+        // FRXUSD uses 18 decimals, so no scaling needed
+        uint256 thAmount = frxUSDAmount;
+        if (IERC20(thUSD).balanceOf(address(this)) < thAmount) {
+            revert InsufficientLiquidity();
+        }
+
+        IERC20(frxUSD).safeTransferFrom(msg.sender, treasury, frxUSDAmount);
+        IERC20(thUSD).safeTransfer(msg.sender, thAmount);
+
+        emit SwapFRXUSDForThUSD(msg.sender, frxUSDAmount, thAmount);
     }
 
     /**
