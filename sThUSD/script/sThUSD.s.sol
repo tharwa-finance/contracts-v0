@@ -11,7 +11,7 @@ contract sThUSDScript is Script {
 
         //testnet mock token public mint
         //IERC20 thUSD = IERC20(0xBDa089250C2bd31db65C99a99D4862d6BAC4446A);
-        
+
         //mainnet thUSD
         IERC20 thUSD = IERC20(0x76972F054aB43829064d31fF5f3AcC5Fabe57FE8);
         new sThUSD(thUSD, msg.sender);
