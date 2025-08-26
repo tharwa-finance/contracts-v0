@@ -21,7 +21,7 @@ All contracts are available on both Sepolia and Mainnet.
 | **thUSDSwap**     | `0x7b930eaD88e7DAD023af9eaDb5D2AC817096c2Bc` |
 | **thUSD/USDC LP** | `0xF88dE5987a4a114Fab1Fe98E681f83216F4b6E76` |
 | **thBonds**       | `0xAc02FF90bC709A134cD4Ad0b50BaB8be9e0f504e` |
-| **sThUSD**        | `0x79ee3BBE1F3FFD21F8ee502416023794f3e8b570` |
+| **sThUSD**        | `0xf7Af0A8079F12F19533B0DF69ce7ee6718b0C46f` |
 
 #### Sepolia
 
