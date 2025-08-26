@@ -35,10 +35,11 @@ All contracts are available on both Sepolia and Mainnet.
 
 ## Security Audit
 
-stage 0 audits are available on :
-[Tokens Audit Report (PDF)](./audits/prismsec_thUSD_TRWA_audit.pdf)
-[Bonds Audit Report (PDF)](./audits/prismsec_tharwa_bonds_audit.pdf)
-[sThUSD Audit Report (PDF)](./audits/prismsec_tharwa_sThUSD_audit.pdf)
+Stage 0 audits are available:
+
+- [Tokens Audit Report (PDF)](./audits/prismsec_thUSD_TRWA_audit.pdf)
+- [Bonds Audit Report (PDF)](./audits/prismsec_tharwa_bonds_audit.pdf)
+- [sThUSD Audit Report (PDF)](./audits/prismsec_tharwa_sThUSD_audit.pdf)
 
 ### More Info
 
