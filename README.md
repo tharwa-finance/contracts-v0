@@ -22,6 +22,7 @@ All contracts are available on both Sepolia and Mainnet.
 | **thUSD/USDC LP** | `0xF88dE5987a4a114Fab1Fe98E681f83216F4b6E76` |
 | **thBonds**       | `0xAc02FF90bC709A134cD4Ad0b50BaB8be9e0f504e` |
 | **sThUSD**        | `0xf7Af0A8079F12F19533B0DF69ce7ee6718b0C46f` |
+| **wThUSD**        | `0xD3ABD8798d1C403582697f1bc0377f7767511461` |
 
 #### Sepolia
 
@@ -32,6 +33,7 @@ All contracts are available on both Sepolia and Mainnet.
 | **thUSD**     | `0xBDa089250C2bd31db65C99a99D4862d6BAC4446A` |
 | **thBonds**   | `0x716430d4321d05a82bdF8e59AFA96026f0c7ca06` |
 | **sThUSD**    | `0xBDa089250C2bd31db65C99a99D4862d6BAC4446A` |
+| **wThUSD**    | `0xa8f71746ce2d0784FA6a5dC34991374024C6Ddf3` |
 
 ## Security Audit
 
