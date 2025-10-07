@@ -8,6 +8,8 @@ This repo contains the tharwa stage 0 contracts which are :
 - Stableswap (thUSD Stableswap Pool)
 - thBonds (tharwa Bonds) 
 - sThUSD (Staked thUSD)
+- wThUSD (wrapped non-Shariah compliant version of ThUSD)
+- Distributors (distribution of THARWA proporional to season points collected)
 
 ### Deployment Addresses
 
