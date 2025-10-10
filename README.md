@@ -9,7 +9,7 @@ This repo contains the tharwa stage 0 contracts which are :
 - thBonds (tharwa Bonds) 
 - sThUSD (Staked thUSD)
 - wThUSD (wrapped non-Shariah compliant version of ThUSD)
-- Distributors (distribution of THARWA proporional to season points collected)
+- Distributors (distribution of THARWA proportional to season points collected)
 
 ### Deployment Addresses
 
@@ -25,6 +25,7 @@ All contracts are available on both Sepolia and Mainnet.
 | **thBonds**       | `0xAc02FF90bC709A134cD4Ad0b50BaB8be9e0f504e` |
 | **sThUSD**        | `0xf7Af0A8079F12F19533B0DF69ce7ee6718b0C46f` |
 | **wThUSD**        | `0xD3ABD8798d1C403582697f1bc0377f7767511461` |
+| **Rewards Distributor**        | `0xBCc65a85B9f457c9Bedf6884A1B4bDB90bCD042a` |
 
 #### Sepolia
 
@@ -36,6 +37,7 @@ All contracts are available on both Sepolia and Mainnet.
 | **thBonds**   | `0x716430d4321d05a82bdF8e59AFA96026f0c7ca06` |
 | **sThUSD**    | `0xBDa089250C2bd31db65C99a99D4862d6BAC4446A` |
 | **wThUSD**    | `0xa8f71746ce2d0784FA6a5dC34991374024C6Ddf3` |
+| **Rewards Distributor**        | `0x4eddb2ae987ca237cd8acf7aa0514365519e0b92` |
 
 ## Security Audit
 
