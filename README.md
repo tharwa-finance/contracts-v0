@@ -35,7 +35,7 @@ All contracts are available on both Sepolia and Mainnet.
 | **MockDAI**             | `0x5574a42Bed488430Fe9F2B901dfB2B98AC2Cf939` |
 | **thUSD**               | `0xBDa089250C2bd31db65C99a99D4862d6BAC4446A` |
 | **thBonds**             | `0x716430d4321d05a82bdF8e59AFA96026f0c7ca06` |
-| **sThUSD**              | `0xBDa089250C2bd31db65C99a99D4862d6BAC4446A` |
+| **sThUSD**              | `0x6201Ea857a054d826208D090c907497Dcd219f61` |
 | **wThUSD**              | `0xa8f71746ce2d0784FA6a5dC34991374024C6Ddf3` |
 | **Rewards Distributor** | `0x4eddb2ae987ca237cd8acf7aa0514365519e0b92` |
 
